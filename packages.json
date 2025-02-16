@@ -1,0 +1,54 @@
+{
+    "packages": {
+        "requests": {
+            "version": "2.32.3",
+            "install_date": "2025-02-16T01:42:30.632394",
+            "security_hash": "22a8c72dfc7fc18db1aca6784e97a638e9d09abe2cd387be473f88bd6dcba22f"
+        },
+        "tqdm": {
+            "version": "4.67.1",
+            "install_date": "2025-02-16T01:43:37.792749",
+            "security_hash": "db1833247c074ee7189038d192d250e4bf650d11cec092bc9f686428d8b341c5"
+        },
+        "colorama": {
+            "version": "0.4.6",
+            "install_date": "2025-02-16T01:42:30.520257",
+            "security_hash": "bc3a1efa0b297242dcd0757e2e83d358bcd18bda77735e493aa89a634e74c9bf"
+        },
+        "certifi>=2017.4.17": {
+            "version": "2025.1.31",
+            "install_date": "2025-02-16T01:42:33.072927",
+            "security_hash": null
+        },
+        "charset-normalizer<4,>=2": {
+            "version": "3.4.1",
+            "install_date": "2025-02-16T01:42:30.480178",
+            "security_hash": null
+        },
+        "urllib3<3,>=1.21.1": {
+            "version": "2.3.0",
+            "install_date": "2025-02-16T01:42:33.275316",
+            "security_hash": null
+        },
+        "idna<4,>=2.5": {
+            "version": "3.10",
+            "install_date": "2025-02-16T01:42:30.644889",
+            "security_hash": null
+        },
+        "charset-normalizer": {
+            "version": "3.4.1",
+            "install_date": "2025-02-16T01:43:37.596633",
+            "security_hash": "91b36a978b5ae0ee86c394f5a54d6ef44db1de0815eb43de826d41d21e4af3de"
+        },
+        "urllib3": {
+            "version": "2.3.0",
+            "install_date": "2025-02-16T01:43:40.572640",
+            "security_hash": "1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df"
+        },
+        "idna": {
+            "version": "3.10",
+            "install_date": "2025-02-16T01:43:40.715576",
+            "security_hash": "69297d5da0cc9281c77efffb4e730254dd45943f45bbfb461de5991713989b1e"
+        }
+    }
+}
