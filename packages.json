@@ -37,7 +37,7 @@
         },
         "charset-normalizer": {
             "version": "3.4.1",
-            "install_date": "2025-02-16T01:43:37.596633",
+            "install_date": "2025-02-16T03:56:30.603574",
             "security_hash": "91b36a978b5ae0ee86c394f5a54d6ef44db1de0815eb43de826d41d21e4af3de"
         },
         "urllib3": {
@@ -47,8 +47,8 @@
         },
         "idna": {
             "version": "3.10",
-            "install_date": "2025-02-16T01:43:40.715576",
-            "security_hash": "69297d5da0cc9281c77efffb4e730254dd45943f45bbfb461de5991713989b1e"
+            "install_date": "2025-02-16T03:56:32.642219",
+            "security_hash": "946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3"
         }
     }
 }

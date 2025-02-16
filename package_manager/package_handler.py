@@ -6,6 +6,7 @@ from datetime import datetime
 from tqdm import tqdm
 import hashlib
 import requests
+from packaging import version
 from .utils import setup_logger
 
 logger = setup_logger()
@@ -57,18 +58,19 @@ class PackageEngine:
             if response.status_code == 200:
                 data = response.json()
                 requires_dist = data["info"].get("requires_dist", [])
-                dependencies = []
+                if requires_dist is None:
+                    return []
 
+                dependencies = []
                 for req in requires_dist:
-                    if "extra ==" not in req:  # Skip optional dependencies
+                    if req and "extra ==" not in req:  # Skip optional dependencies
                         dep_name = self._get_base_name(req)
                         if dep_name and dep_name not in dependencies:
                             dependencies.append(dep_name)
-
                 return dependencies
             return []
         except Exception as e:
-            logger.error(f"Error fetching dependencies for {package_name}: {str(e)}")
+            logger.debug(f"Error fetching dependencies for {package_name}: {str(e)}")
             return []
 
     def _check_package_security(self, package_name):
@@ -79,12 +81,12 @@ class PackageEngine:
                 data = response.json()
                 releases = data.get("releases", {})
                 if releases:
-                    latest_version = max(releases.keys())
+                    latest_version = max(releases.keys(), key=lambda x: version.parse(x))
                     release_data = releases[latest_version][0]
                     package_hash = release_data.get("digests", {}).get("sha256")
                     return package_hash
         except Exception as e:
-            logger.error(f"Error checking security for {package_name}: {str(e)}")
+            logger.debug(f"Error checking security for {package_name}: {str(e)}")
             return None
         return None
 
@@ -98,6 +100,42 @@ class PackageEngine:
             return None
         except Exception as e:
             logger.debug(f"Error getting version for {base_name}: {str(e)}")
+            return None
+
+    def _get_package_metadata(self, package_name):
+        try:
+            api_url = f"https://pypi.org/pypi/{package_name}/json"
+            response = requests.get(api_url)
+            if response.status_code == 200:
+                data = response.json()
+                info = data["info"]
+                return {
+                    "author": info.get("author") or "Unknown",
+                    "license": info.get("license") or "Unknown",
+                    "summary": info.get("summary") or "No description available"
+                }
+            return None
+        except Exception as e:
+            logger.debug(f"Error fetching metadata for {package_name}: {str(e)}")
+            return None
+
+    def _get_latest_version(self, package_name):
+        """Get the latest version available on PyPI"""
+        try:
+            api_url = f"https://pypi.org/pypi/{package_name}/json"
+            response = requests.get(api_url)
+            if response.status_code == 200:
+                data = response.json()
+                releases = data.get("releases", {}).keys()
+                if releases:
+                    # Filter out pre-releases unless only pre-releases exist
+                    stable_releases = [r for r in releases if not version.parse(r).is_prerelease]
+                    if stable_releases:
+                        return max(stable_releases, key=lambda x: version.parse(x))
+                    return max(releases, key=lambda x: version.parse(x))
+            return None
+        except Exception as e:
+            logger.debug(f"Error fetching latest version for {package_name}: {str(e)}")
             return None
 
     def install_package(self, package_spec):
@@ -271,17 +309,119 @@ class PackageEngine:
         except Exception as e:
             raise Exception(f"Failed to update {base_name}: {str(e)}")
 
-    def list_packages(self):
+    def _normalize_package_data(self):
+        """Normalize package data by consolidating version constraints"""
         data = self._load_packages()
+        normalized = {"packages": {}}
+
+        for name, info in data["packages"].items():
+            base_name = self._get_base_name(name)
+            if base_name not in normalized["packages"]:
+                normalized["packages"][base_name] = {
+                    "version": info["version"],
+                    "install_date": info["install_date"],
+                    "security_hash": info.get("security_hash"),
+                    "constraints": []
+                }
+            if "==" not in name and any(c in name for c in "<>!=~"):
+                normalized["packages"][base_name]["constraints"].append(name.split(base_name)[1].strip())
+
+        return normalized
+
+    def list_packages(self):
+        data = self._normalize_package_data()
         if not data.get("packages"):
             logger.info("No packages installed")
             return
 
-        logger.info("\nInstalled packages:")
+        # Header with clean border
+        logger.info("\n📦 Package Version Dashboard")
+        logger.info("═" * 50)
+
+        # Package listing with tree structure
         for name, info in sorted(data["packages"].items()):
-            current_version = self._get_installed_version(name)
-            if current_version:
-                status = "✓" if current_version == info.get("version") else "!"
-                logger.info(f"{status} {name}=={current_version}")
-            else:
-                logger.info(f"? {name} (not found)")
+            try:
+                current_version = self._get_installed_version(name)
+                if current_version:
+                    latest_version = self._get_latest_version(name)
+                    security_hash = self._check_package_security(name)
+                    metadata = self._get_package_metadata(name)
+
+                    # Status indicators
+                    version_status = "✓" if (latest_version and version.parse(current_version) >= version.parse(latest_version)) else "⚠"
+                    security_status = "🔒" if security_hash else "  "
+
+                    # Package header with version, security, and metadata
+                    logger.info(f"\n{version_status} {security_status} {name}")
+                    logger.info("├── Current: " + current_version)
+                    if latest_version and version.parse(current_version) < version.parse(latest_version):
+                        logger.info("├── Latest:  " + latest_version)
+
+                    # Show version constraints if any
+                    constraints = info.get("constraints", [])
+                    if constraints:
+                        logger.info("├── Constraints: " + ", ".join(constraints))
+
+                    # Show metadata if available
+                    if metadata:
+                        logger.info("├── License: " + metadata["license"])
+                        logger.info("├── Author:  " + metadata["author"])
+                        if len(metadata["summary"]) > 80:
+                            logger.info("├── Summary: " + metadata["summary"][:77] + "...")
+                        else:
+                            logger.info("├── Summary: " + metadata["summary"])
+
+                    # Show dates
+                    logger.info("├── Install Date: " + info.get("install_date", "Unknown").split("T")[0])
+                    if info.get("update_date"):
+                        logger.info("├── Last Update: " + info["update_date"].split("T")[0])
+
+                    # Get and display dependencies
+                    deps = self._get_dependencies(name) or []
+                    if deps:
+                        logger.info("└── Dependencies:")
+                        # Sort dependencies by their importance (direct dependencies first)
+                        direct_deps = []
+                        transitive_deps = []
+                        for dep in deps:
+                            try:
+                                dep_version = self._get_installed_version(dep)
+                                dep_str = f"{dep} ({dep_version})" if dep_version else f"{dep} (not installed)"
+                                if dep in data["packages"]:
+                                    direct_deps.append(dep_str)
+                                else:
+                                    transitive_deps.append(dep_str)
+                            except Exception:
+                                transitive_deps.append(f"{dep} (version unknown)")
+
+                        # Display direct dependencies
+                        if direct_deps:
+                            logger.info("    ├── Direct:")
+                            for i, dep in enumerate(sorted(direct_deps)):
+                                is_last = i == len(direct_deps) - 1 and not transitive_deps
+                                prefix = "    │   └── " if is_last else "    │   ├── "
+                                logger.info(prefix + dep)
+
+                        # Display transitive dependencies
+                        if transitive_deps:
+                            if direct_deps:
+                                logger.info("    └── Transitive:")
+                            for i, dep in enumerate(sorted(transitive_deps)):
+                                is_last = i == len(transitive_deps) - 1
+                                prefix = "        └── " if is_last else "        ├── "
+                                logger.info(prefix + dep)
+                    else:
+                        logger.info("└── No dependencies")
+                else:
+                    logger.info(f"? {name} (not found)")
+            except Exception as e:
+                logger.error(f"! {name} (error: {str(e)})")
+
+        # Legend with box drawing characters
+        logger.info("\n" + "─" * 20)
+        logger.info("Legend:")
+        logger.info("✓ - Up to date")
+        logger.info("⚠ - Update available")
+        logger.info("🔒 - Security hash verified")
+        logger.info("? - Not installed")
+        logger.info("! - Error checking")
