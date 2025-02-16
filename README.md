@@ -10,6 +10,8 @@ pip install -e .
 
 ## Usage
 
+# note if your path is pip3, update the files. Right now, the path is just pip.
+
 ### Basic Commands
 
 ```bash
