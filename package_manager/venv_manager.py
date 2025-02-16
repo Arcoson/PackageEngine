@@ -6,7 +6,7 @@ logger = setup_logger()
 
 class VenvManager:
     def create_venv(self, venv_name):
-        """Create a new virtual environment"""
+       
         try:
             venv_path = os.path.abspath(venv_name)
             

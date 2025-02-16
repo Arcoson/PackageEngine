@@ -1,5 +1,5 @@
 # Clone the repository
-git clone https://github.com/yourusername/PackageEngine.git
+git clone https://github.com/Arcoson/PackageEngine.git
 
 # Navigate to the project directory
 cd PackageEngine
@@ -14,22 +14,22 @@ pip install -e .
 
 ```bash
 # Install packages
-python pypackman.py pkgx install package_name
+python3 pypackman.py pkgx install package_name
 
 # Install multiple packages
-python pypackman.py pkgx install package1 package2
+python3 pypackman.py pkgx install package1 package2
 
 # Remove a package
-python pypackman.py pkgx remove package_name
+python3 pypackman.py pkgx remove package_name
 
 # Update a package
-python pypackman.py pkgx update package_name
+python3 pypackman.py pkgx update package_name
 
 # List installed packages
-python pypackman.py pkgx list
+python3 pypackman.py pkgx list
 
 # Create a virtual environment
-python pypackman.py pkgx venv myenv
+python3 pypackman.py pkgx venv myenv
 ```
 
 ### Package Version Dashboard
@@ -77,20 +77,3 @@ The dashboard shows:
 - 🔒 Security hash verified
 - ? Package not found
 - ! Error checking package
-
-### Tree Structure
-
-Dependencies are organized in a hierarchical tree:
-```
-package_name
-├── Current: 1.0.0
-├── Latest: 1.1.0
-├── License: MIT
-├── Author: John Doe
-├── Summary: Package description
-└── Dependencies:
-    ├── Direct:
-    │   ├── dep1 (1.0.0)
-    │   └── dep2 (2.0.0)
-    └── Transitive:
-        └── dep3 (1.5.0)
